@@ -19,10 +19,17 @@ class Settings(BaseSettings):
     # Vector store
     chroma_persist_dir: str = "./chroma_db"
 
-    # LLM / embeddings -- provider TBD; keys left optional so the app
-    # doesn't crash at import time before a provider is chosen.
-    llm_api_key: str | None = None
-    embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    # LLM / embeddings
+    # LLM: Groq-hosted openai/gpt-oss-120b (fast inference, OpenAI-compatible API).
+    groq_api_key: str | None = None
+    llm_model_name: str = "openai/gpt-oss-120b"
+
+    # Embeddings: Cohere embed API (avoids local torch/sentence-transformers
+    # install weight). Cohere v3 models require input_type at call time --
+    # "search_document" when embedding ingested chunks, "search_query" when
+    # embedding a query at retrieval time. See core/vector_store.py.
+    cohere_api_key: str | None = None
+    embedding_model_name: str = "embed-english-v3.0"
 
     # Interview behavior
     questions_per_session: int = 6

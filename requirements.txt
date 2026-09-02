@@ -2,11 +2,14 @@ fastapi
 uvicorn[standard]
 pydantic
 pydantic-settings
-sqlalchemy
+sqlmodel
 langgraph
 langchain
 langchain-community
 langchain-chroma
+langchain-text-splitters
+langchain-groq
+langchain-cohere
 chromadb
 pymupdf
 python-multipart

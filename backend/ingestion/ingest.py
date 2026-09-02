@@ -22,6 +22,7 @@ import uuid
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from backend.config import get_settings
+from backend.core.embeddings import get_embedding_function
 from backend.core.vector_store import get_vector_store
 from backend.ingestion.loaders import iter_pdf_pages
 from backend.ingestion.role_topics import ROLE_TOPICS, all_book_filenames, role_for_book
@@ -30,19 +31,6 @@ SOURCE_BOOKS_DIR = os.path.join(os.path.dirname(__file__), "source_books")
 
 CHUNK_SIZE = 900
 CHUNK_OVERLAP = 175
-
-
-def get_default_embedding_function():
-    """
-    Local sentence-transformers embeddings -- no API key required, so
-    ingestion is unblocked regardless of which LLM provider is chosen
-    later for question generation. Swap this out in config.py if you
-    later decide to embed via an API provider instead.
-    """
-    from langchain_huggingface import HuggingFaceEmbeddings
-
-    settings = get_settings()
-    return HuggingFaceEmbeddings(model_name=settings.embedding_model_name)
 
 
 def build_splitter() -> RecursiveCharacterTextSplitter:
@@ -116,7 +104,7 @@ def main():
         print(f"Expected filenames: {all_book_filenames()}")
         sys.exit(1)
 
-    embedding_fn = get_default_embedding_function()
+    embedding_fn = get_embedding_function()
     vector_store = get_vector_store(embedding_fn)
     splitter = build_splitter()
 
