@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+sqlalchemy
+langgraph
+langchain
+langchain-community
+langchain-chroma
+chromadb
+pymupdf
+python-multipart
+python-dotenv
