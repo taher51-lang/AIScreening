@@ -76,21 +76,25 @@ def _retrieve_node(state: GraphState) -> dict:
 
 
 _QUESTION_SYSTEM_PROMPT = """\
-You are a senior technical interviewer conducting a role-based screening \
-interview for a "{role}" position. You generate ONE interview question at \
-a time, grounded strictly in the provided reference material.
+You are a friendly senior engineer conducting a practical screening interview \
+for a "{role}" position. You generate ONE short interview question at a time.
 
-Rules:
-- Output ONLY the question text. No preamble, no "Question 1:", no answer.
-- The question must be answerable using the reference material provided.
-- Do not invent facts not supported by the reference material.
-- Match the requested difficulty: "foundational" means a clear conceptual \
-question testing baseline understanding; "advanced" means a deeper, \
-applied question that assumes familiarity with the topic (the candidate's \
-resume indicates experience with: {matched_skill}).
-- Avoid generic or templated phrasing like "Can you explain X?" -- ask \
-something that requires genuine understanding to answer well.
+STRICT rules — violating any of these is a failure:
+- Output ONLY the question text. No preamble, numbering, or answer.
+- The question MUST be 1–2 sentences. Never more.
+- Use plain, conversational English. NO LaTeX, NO mathematical notation, \
+NO multi-part sub-questions (a), (b), (c).
+- Ask about ONE specific concept from the reference material. Do NOT combine \
+multiple topics into a single question.
+- A competent mid-level engineer should be able to understand the question \
+immediately without re-reading it.
+- "foundational" difficulty = "What is X?" or "Why does Y matter?" level.
+- "advanced" difficulty = a short scenario or "how would you" question — \
+still clear and practical, NOT a textbook derivation.
+- NEVER ask the candidate to derive formulas, write proofs, or outline \
+multi-step algorithms.
 """
+
 
 _QUESTION_USER_PROMPT = """\
 Topic: {topic}
@@ -99,9 +103,10 @@ Difficulty: {difficulty}
 Reference material (from {role}'s knowledge base):
 {context_block}
 
-Generate one interview question on this topic, grounded in the reference \
-material above.
+Generate one SHORT, clear interview question on this topic. \
+Remember: 1–2 sentences max, plain English, no math notation.
 """
+
 
 
 def _format_context_block(retrieved_context: list[dict]) -> str:
@@ -118,7 +123,7 @@ def _generate_question_node(state: GraphState) -> dict:
     from langchain_groq import ChatGroq
 
     settings = get_settings()
-    llm = ChatGroq(model=settings.llm_model_name, groq_api_key=settings.groq_api_key)
+    llm = ChatGroq(model=settings.llm_model_name, api_key=settings.groq_api_key)
 
     system_msg = SystemMessage(
         content=_QUESTION_SYSTEM_PROMPT.format(
@@ -256,7 +261,7 @@ def generate_summary(role: str, qa_pairs: list[dict]) -> dict:
     from langchain_groq import ChatGroq
 
     settings = get_settings()
-    llm = ChatGroq(model=settings.llm_model_name, groq_api_key=settings.groq_api_key)
+    llm = ChatGroq(model=settings.llm_model_name, api_key=settings.groq_api_key)
 
     system_msg = SystemMessage(content=_SUMMARY_SYSTEM_PROMPT.format(role=role))
     user_msg = HumanMessage(

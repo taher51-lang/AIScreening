@@ -28,11 +28,12 @@ class TopicPlan:
 
 @lru_cache
 def get_strategy():
-    """Process-lifetime singleton retrieval strategy (public -- used by
+    """Retrieval strategy factory (public -- used by
     both retrieve_context() below and the LangGraph retrieve node)."""
     settings = get_settings()
     embedding_fn = get_embedding_function()
     return get_retrieval_strategy(settings.retrieval_strategy, embedding_fn)
+
 
 
 def plan_topic(
@@ -57,16 +58,21 @@ def plan_topic(
     topic = topics[(sequence_number - 1) % len(topics)]
 
     resume_terms = set(extracted_skills.get("skills", []))
+    # Noise words that should NOT count as a skill-topic match on their own.
+    _NOISE = {"learning", "model", "data", "system", "based", "and", "of", "for", "the", "with"}
+
     matched_skill = next(
         (term for term in resume_terms if term in topic or topic in term),
         None,
     )
-    # Also check for partial word overlap (e.g. resume has "deep learning",
-    # topic is "neural networks and deep learning").
+    # Also check for partial word overlap, but require at least 2 meaningful
+    # (non-noise) words to match to avoid false positives like
+    # "deep learning" matching "instance-based learning".
     if matched_skill is None:
         topic_words = set(topic.lower().split())
         for term in resume_terms:
-            if set(term.lower().split()) & topic_words:
+            overlap = set(term.lower().split()) & topic_words - _NOISE
+            if len(overlap) >= 2:
                 matched_skill = term
                 break
 
@@ -75,13 +81,14 @@ def plan_topic(
 
 
 def build_query(topic_plan: TopicPlan) -> str:
-    """Shapes the topic into a natural-language query, per difficulty."""
-    if topic_plan.difficulty == "advanced":
-        return (
-            f"{topic_plan.topic}, with practical application and implementation "
-            f"details relevant to {topic_plan.matched_skill}"
-        )
-    return f"core concepts and theoretical foundations of {topic_plan.topic}"
+    """Shapes the topic into a natural-language query for vector search.
+
+    Important: we intentionally do NOT inject resume skills here.
+    Resume skills should only influence the LLM prompt, not the vector
+    search query — mixing them pollutes retrieval with irrelevant terms.
+    """
+    return f"{topic_plan.topic}: key concepts, definitions, algorithms, and practical examples"
+
 
 
 def retrieve_chunks(topic_plan: TopicPlan, role: str) -> list[RetrievedChunk]:

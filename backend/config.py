@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     embedding_provider: str = 'local'
     # Vector store
     chroma_persist_dir: str = "./chroma_db"
+    retrieval_strategy: str = "hybrid"
 
     # LLM / embeddings
     # LLM: Groq-hosted openai/gpt-oss-120b (fast inference, OpenAI-compatible API).
@@ -29,8 +30,9 @@ class Settings(BaseSettings):
     # "search_document" when embedding ingested chunks, "search_query" when
     # embedding a query at retrieval time. See core/vector_store.py.
     cohere_api_key: str | None = None
-    embedding_model_name: str = "embed-english-v3.0"
-
+    embedding_model_name: str = "all-MiniLM-L6-v2"
+    retrieval_k: int = 4          # final number of chunks returned
+    retrieval_fetch_k: int = 20 
     # Interview behavior
     questions_per_session: int = 6
 

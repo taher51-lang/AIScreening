@@ -119,18 +119,31 @@ class HybridRetrievalStrategy(RetrievalStrategy):
         return self._bm25_cache[role]
 
     def retrieve(self, query: str, role: str, k: int, fetch_k: int) -> list[RetrievedChunk]:
-        from langchain_community.retrievers import EnsembleRetriever
-
         bm25_retriever = self._get_bm25_retriever(role, k)
         semantic_retriever = self.vector_store.as_retriever(
             search_kwargs={"k": k, "filter": {"role_tag": role}}
         )
-        ensemble = EnsembleRetriever(
-            retrievers=[bm25_retriever, semantic_retriever],
-            weights=[0.5, 0.5],
-        )
-        docs = ensemble.invoke(query)[:k]
+
+        # Retrieve from both sources independently
+        bm25_docs = bm25_retriever.invoke(query)
+        semantic_docs = semantic_retriever.invoke(query)
+
+        # Simple reciprocal rank fusion: score each doc by 1/(rank+1),
+        # combine scores across both lists, return top-k by fused score.
+        scores: dict[str, tuple[float, Document]] = {}
+        for rank, doc in enumerate(bm25_docs):
+            key = doc.page_content[:200]
+            prev_score = scores.get(key, (0.0, doc))[0]
+            scores[key] = (prev_score + 0.5 / (rank + 1), doc)
+        for rank, doc in enumerate(semantic_docs):
+            key = doc.page_content[:200]
+            prev_score = scores.get(key, (0.0, doc))[0]
+            scores[key] = (prev_score + 0.5 / (rank + 1), doc)
+
+        ranked = sorted(scores.values(), key=lambda x: x[0], reverse=True)
+        docs = [doc for _, doc in ranked[:k]]
         return [_to_retrieved_chunk(d) for d in docs]
+
 
 
 _STRATEGY_REGISTRY = {

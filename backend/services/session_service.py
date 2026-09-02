@@ -214,9 +214,16 @@ def get_summary(db: DBSession, session_id: str) -> SessionSummaryResponse:
             summary_text=result["summary_text"],
             insights=result["insights"],
         )
-        db.add(existing_summary)
-        db.commit()
-        db.refresh(existing_summary)
+        try:
+            db.add(existing_summary)
+            db.commit()
+            db.refresh(existing_summary)
+        except Exception:
+            db.rollback()
+            existing_summary = db.exec(
+                select(SessionSummary).where(SessionSummary.session_id == session_id)
+            ).first()
+
 
     return SessionSummaryResponse(
         session_id=session.id,
