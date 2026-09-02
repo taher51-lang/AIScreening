@@ -15,8 +15,10 @@ from sqlmodel import Session as DBSession
 from sqlmodel import select
 
 from backend.config import get_settings
+from backend.graph import interview_graph
 from backend.models.db_models import (
     Answer,
+    DifficultyLevel,
     Question,
     Session,
     SessionStatus,
@@ -89,6 +91,29 @@ def _get_answer_for_question(db: DBSession, question_id: str) -> Answer | None:
     return db.exec(select(Answer).where(Answer.question_id == question_id)).first()
 
 
+def _generate_and_persist_question(
+    db: DBSession, session: Session, sequence_number: int
+) -> Question:
+    generated = interview_graph.generate_question(
+        role=session.role,
+        extracted_skills=session.extracted_skills,
+        session_id=session.id,
+        sequence_number=sequence_number,
+    )
+    question = Question(
+        session_id=session.id,
+        sequence_number=sequence_number,
+        topic=generated["topic"],
+        question_text=generated["question_text"],
+        retrieved_context=generated["retrieved_context"],
+        difficulty=DifficultyLevel(generated["difficulty"]),
+    )
+    db.add(question)
+    db.commit()
+    db.refresh(question)
+    return question
+
+
 def get_current_question(db: DBSession, session_id: str) -> QuestionResponse:
     session = _get_session_or_404(db, session_id)
 
@@ -104,11 +129,8 @@ def get_current_question(db: DBSession, session_id: str) -> QuestionResponse:
 
     if latest is None:
         # First question of the session.
-        # TODO: delegate to graph/interview_graph.py once built:
-        #   question = interview_graph.generate_first_question(db, session)
-        raise NotImplementedError(
-            "Wire up interview_graph.generate_first_question here"
-        )
+        question = _generate_and_persist_question(db, session, sequence_number=1)
+        return _to_question_response(question)
 
     # All prior questions answered but session not marked complete --
     # this shouldn't normally happen (submit_answer should have advanced
@@ -147,10 +169,13 @@ def submit_answer(
             accepted=True, next_question=None, session_status=session.status.value
         )
 
-    # TODO: delegate to graph/interview_graph.py once built:
-    #   next_question = interview_graph.generate_next_question(db, session, question, answer)
-    raise NotImplementedError(
-        "Wire up interview_graph.generate_next_question here"
+    next_question = _generate_and_persist_question(
+        db, session, sequence_number=question.sequence_number + 1
+    )
+    return AnswerSubmitResponse(
+        accepted=True,
+        next_question=_to_question_response(next_question),
+        session_status=session.status.value,
     )
 
 
@@ -183,10 +208,15 @@ def get_summary(db: DBSession, session_id: str) -> SessionSummaryResponse:
     ).first()
 
     if existing_summary is None:
-        # TODO: delegate to graph/interview_graph.py or a dedicated
-        # summary_service once built:
-        #   existing_summary = interview_graph.generate_summary(db, session, qa_pairs)
-        raise NotImplementedError("Wire up summary generation here")
+        result = interview_graph.generate_summary(session.role, qa_pairs)
+        existing_summary = SessionSummary(
+            session_id=session.id,
+            summary_text=result["summary_text"],
+            insights=result["insights"],
+        )
+        db.add(existing_summary)
+        db.commit()
+        db.refresh(existing_summary)
 
     return SessionSummaryResponse(
         session_id=session.id,

@@ -10,9 +10,8 @@ live in `backend/ingestion/source_books/`.
 ROLE_TOPICS = {
     "ai_ml_engineer": {
         "books": [
-            "mitchell_machine_learning.pdf",
-            "hundred_page_ml_book.pdf",
-            "ml_for_absolute_beginners.pdf",
+            "MachineLearningTomMitchell.pdf",
+            "Machine Learning For Absolute Beginners.pdf",
         ],
         "topics": [
             "concept learning and hypothesis space",
@@ -22,17 +21,14 @@ ROLE_TOPICS = {
             "bayesian learning",
             "computational learning theory",
             "instance-based learning",
-            "fundamental machine learning algorithms",
-            "gradient descent and anatomy of a learning algorithm",
-            "neural networks and deep learning",
-            "unsupervised learning",
-            "other forms of learning (semi-supervised, reinforcement)",
+            "genetic algorithms",
+            "reinforcement learning",
         ],
     },
     "data_scientist_applied_ml": {
         "books": [
-            "intro_to_ml_with_python.pdf",
-            "master_ml_algorithms_brownlee.pdf",
+            "Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf",
+            "Master Machine Learning Algorithms - Discover how they work and Implement Them From Scratch by Jason Brownlee (z-lib.org).pdf",
         ],
         "topics": [
             "applied supervised learning workflows",
@@ -44,8 +40,8 @@ ROLE_TOPICS = {
     },
     "advanced_ml_researcher": {
         "books": [
-            "bishop_pattern_recognition_ml.pdf",
-            "ai_ml_dl_overview.pdf",
+            "Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf",
+            "Artificial Intelligence, Machine Learning, and Deep Learning.pdf",
         ],
         "topics": [
             "probabilistic graphical models",

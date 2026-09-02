@@ -10,6 +10,8 @@ langchain-chroma
 langchain-text-splitters
 langchain-groq
 langchain-cohere
+langchain-huggingface
+sentence-transformers
 chromadb
 pymupdf
 python-multipart

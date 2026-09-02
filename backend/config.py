@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite:///./interview.db"
     db_echo: bool = False
-
+    embedding_provider: str = 'local'
     # Vector store
     chroma_persist_dir: str = "./chroma_db"
 
